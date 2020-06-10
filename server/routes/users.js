@@ -1,8 +1,11 @@
 const router = require('express').Router();
 
-const jwt = require('jsonwebtoken')
+const auth = require('../middleware/checkToken')
 const bcrypt = require('bcryptjs')
 const saltRounds = 10;
+
+let jwt = require('jsonwebtoken');
+const config = require('../config/jwtKey');
 
 
 router.get('/users', async (req, res) => {
@@ -78,12 +81,28 @@ router.post('/user/login', async (req, res) => {
                     console.log(err); 
                     return res.status(500).send({error: 'Login failed'})
                 }
-                // add token
-                return res.status(200).send({ response })
+                delete user.password
+                jwt.sign({user}, config.secretKey ,(err, token) => {
+                    if(err) {
+                      console.log(err) 
+                     return res.status(500).send({error: 'Could not create token'})
+                } 
+                return res.status(200).send({ response, token })
+                });
             })
         }
     })
 })
+
+router.get('/user/data', auth.checkToken, (req, res) => {
+    //verify the JWT token generated for the user
+   const authorizedData = req.decoded
+ if(req.decoded){
+     return res.status(200).send(authorizedData)
+ }
+});
+
+
 
 router.post('user/logout', async (req, res) => {
     const userCollection = db.collection('users')
@@ -93,15 +112,13 @@ router.get('/posts', async (req, res) => {
     
 })
 
-router.post('/posts', async (req, res) => {
+router.post('/posts', auth.checkToken, async (req, res) => {
     const userCollection = db.collection('users')
     const { postTitle, postContent, postImage } = req.body
     if(!postTitle || !postContent){
         return res.status(500).send({error: 'Missing fields'})
     }
-    if(postImage){
-        return res.send('contains image')
-    }
+    
 })
 
 

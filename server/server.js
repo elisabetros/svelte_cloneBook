@@ -1,5 +1,7 @@
 const express = require('express')
 const app = express()
+
+const jwt = require('jsonwebtoken');
 global.MongoClient = require('mongodb').MongoClient
 global.ObjectId = require('mongodb').ObjectId
 
