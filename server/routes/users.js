@@ -1,5 +1,5 @@
 const router = require('express').Router();
-
+const ObjectId = require('mongodb').ObjectId
 const auth = require('../middleware/checkToken')
 const bcrypt = require('bcryptjs')
 const saltRounds = 10;
@@ -82,7 +82,7 @@ router.post('/user/login', async (req, res) => {
                     return res.status(500).send({error: 'Login failed'})
                 }
                 delete user.password
-                jwt.sign({user}, config.secretKey ,(err, token) => {
+                jwt.sign({user}, config.secretKey, { expiresIn: '24h' } ,(err, token) => {
                     if(err) {
                       console.log(err) 
                      return res.status(500).send({error: 'Could not create token'})
@@ -104,22 +104,20 @@ router.get('/user/data', auth.checkToken, (req, res) => {
 
 
 
-router.post('user/logout', async (req, res) => {
+router.post('/user/logout', auth.checkToken, async (req, res) => {
     const userCollection = db.collection('users')
+    const { user } = req.decoded
+    console.log(user._id)
+   
+    await  userCollection.findOneAndUpdate({_id: ObjectId(user._id)}, {$set:{isLoggedIn:false}}, (err, dbResponse) => {
+            if(err){console.log(err); return;}
+            // console.log(user)
+            return res.status(200).send({response: dbResponse})
+        })
+        console.log(userToLogout )  
 })
 
-router.get('/posts', async (req, res) => {
-    
-})
 
-router.post('/posts', auth.checkToken, async (req, res) => {
-    const userCollection = db.collection('users')
-    const { postTitle, postContent, postImage } = req.body
-    if(!postTitle || !postContent){
-        return res.status(500).send({error: 'Missing fields'})
-    }
-    
-})
 
 
 

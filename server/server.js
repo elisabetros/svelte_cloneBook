@@ -1,9 +1,9 @@
 const express = require('express')
 const app = express()
-
 const jwt = require('jsonwebtoken');
-global.MongoClient = require('mongodb').MongoClient
-global.ObjectId = require('mongodb').ObjectId
+
+MongoClient = require('mongodb').MongoClient
+ObjectId = require('mongodb').ObjectId
 
 // ############################
 
@@ -21,8 +21,6 @@ MongoClient.connect(url, { useUnifiedTopology: true } ,(err, client) => {
     db = client.db(dbName)
 })
 
-
-// ############################
 
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
@@ -50,7 +48,9 @@ app.use(cors({
 // ############################
 
 const userRoute = require('./routes/users')
+const userPostRoute = require('./routes/user-posts')
 app.use(userRoute)
+app.use(userPostRoute)
 
 // ############################
 
