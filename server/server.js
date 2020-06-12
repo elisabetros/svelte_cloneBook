@@ -1,9 +1,7 @@
 const express = require('express')
 const app = express()
-const jwt = require('jsonwebtoken');
 
 MongoClient = require('mongodb').MongoClient
-ObjectId = require('mongodb').ObjectId
 
 // ############################
 
@@ -20,6 +18,7 @@ MongoClient.connect(url, { useUnifiedTopology: true } ,(err, client) => {
     console.log('connected to mongo')
     db = client.db(dbName)
 })
+
 
 
 app.use(express.urlencoded({ extended: false }))

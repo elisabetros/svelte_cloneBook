@@ -3,6 +3,11 @@ const ObjectId = require('mongodb').ObjectId
 const auth = require('../middleware/checkToken')
 const bcrypt = require('bcryptjs')
 const saltRounds = 10;
+const formidable = require('formidable')
+const detect = require("detect-file-type")
+const {v1: uuidv1} = require("uuid")
+const path = require("path")
+const fs = require("fs") //part of node.js
 
 let jwt = require('jsonwebtoken');
 const config = require('../config/jwtKey');
@@ -118,15 +123,64 @@ router.put('/user/logout', auth.checkToken, async (req, res) => {
 })
 
 router.post('/user/profilePicture', auth.checkToken, async (req, res) => {
+    const userCollection = db.collection('users')
+    const form = new formidable.IncomingForm()
+    const { user } = req.decoded
 
-})
-
-router.put('/user/profilePicture', auth.checkToken, async (req, res) => {
-
+    const userToUpdate = await userCollection.findOne({_id: ObjectId(user._id)})
+    // if(userToUpdate.hasOwnProperty('profilePicture')){
+    //     fs.unlinkSync(user.profilePicture)
+    // }
+    form.parse(req, (err, fields, files) => {
+        if(err){return res.send("error in file")}
+        
+        detect.fromFile(files.picture.path, (err, result) => {
+            // console.log(result.ext)
+            const pictureName = uuidv1()+"."+result.ext
+            // console.log(pictureName) // ed671140-69ea-11ea-9ec7-9ff298c14d8c.jpg
+            const allowedImageTypes = ["jpg", "jpeg", "png"]
+            if(! allowedImageTypes.includes(result.ext)){
+                return res.send("image not allowed")
+            }
+            const oldPath = files.picture.path
+            const newPath = path.join(__dirname,"..", "pictures", "profilePictures", pictureName)
+            fs.rename(oldPath, newPath, async err => {
+                if(err){console.log("cannot move file"); return;}
+                userCollection.findOneAndUpdate({_id:ObjectId(user._id)}, {$set:{'profilePicture': pictureName}}, (err, dbResponse) => {
+                    if(err){
+                        return res.status(500).send('Something went wrong, please try again')
+                    }
+                    const user = dbResponse.value;
+                    jwt.sign({user}, config.secretKey, { expiresIn: '24h' } ,(err, token) => {
+                        if(err) {
+                        console.log(err) 
+                        return res.status(500).send({error: 'Could not create token'})
+                        } 
+                        return res.send({token, dbResponse})
+                    })
+                })
+            })
+        })
+    })
 })
 
 router.delete('/user/profilePicture', auth.checkToken, async (req, res) => {
-
+    const userCollection = db.collection('users')
+    const { user } = req.decoded
+    userCollection.findOneAndUpdate({_id:ObjectId(user._id)}, {$unset:{'profilePicture': ''}}, (err, dbResponse) => {
+        if(err){
+            return res.status(500).send('Something went wrong, please try again')
+        }
+        console.log(dbResponse)
+        const user = dbResponse.value;
+                jwt.sign({user}, config.secretKey, { expiresIn: '24h' } ,(err, token) => {
+                    if(err) {
+                      console.log(err) 
+                     return res.status(500).send({error: 'Could not create token'})
+                } 
+            return res.send({token, dbResponse})
+            })
+        })
 })
 
 router.put('/user/update', auth.checkToken, async (req, res) => {
