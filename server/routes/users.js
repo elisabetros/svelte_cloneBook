@@ -53,7 +53,7 @@ router.post('/user/register', async (req, res) => {
     })
 })
 
-router.post('/user/login', async (req, res) => {
+router.put('/user/login', async (req, res) => {
     const userCollection = db.collection('users')
     const { email, password } = req.body
     if(!email || !password){
@@ -104,12 +104,12 @@ router.get('/user/data', auth.checkToken, (req, res) => {
 
 
 
-router.post('/user/logout', auth.checkToken, async (req, res) => {
+router.put('/user/logout', auth.checkToken, async (req, res) => {
     const userCollection = db.collection('users')
     const { user } = req.decoded
     console.log(user._id)
    
-    await  userCollection.findOneAndUpdate({_id: ObjectId(user._id)}, {$set:{isLoggedIn:false}}, (err, dbResponse) => {
+    await userCollection.findOneAndUpdate({_id: ObjectId(user._id)}, {$set:{isLoggedIn:false}}, (err, dbResponse) => {
             if(err){console.log(err); return;}
             // console.log(user)
             return res.status(200).send({response: dbResponse})
@@ -117,8 +117,33 @@ router.post('/user/logout', auth.checkToken, async (req, res) => {
         console.log(userToLogout )  
 })
 
+router.post('/user/profilePicture', auth.checkToken, async (req, res) => {
 
+})
 
+router.put('/user/profilePicture', auth.checkToken, async (req, res) => {
+
+})
+
+router.delete('/user/profilePicture', auth.checkToken, async (req, res) => {
+
+})
+
+router.post('/user/update', auth.checkToken, async (req, res) => {
+    const { newFirstname, newEmail, newLastname } = req.body
+})
+
+router.delete('/user', auth.checkToken, async (req, res) => {
+    const userCollection = db.collection('users')
+    const { user } = req.decoded
+    await  userCollection.deleteOne({_id: ObjectId(user._id)}, (err, dbResponse) => {
+        if(err){
+            console.log(err); 
+            return res.status(500).send({error: 'Something went wrong, please try again'});}
+        // console.log(user)
+        return res.status(200).send({response: dbResponse})
+    })
+})
 
 
 
