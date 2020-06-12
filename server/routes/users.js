@@ -129,8 +129,29 @@ router.delete('/user/profilePicture', auth.checkToken, async (req, res) => {
 
 })
 
-router.post('/user/update', auth.checkToken, async (req, res) => {
-    const { newFirstname, newEmail, newLastname } = req.body
+router.put('/user/update', auth.checkToken, async (req, res) => {
+    let { newFirstname, newEmail, newLastname } = req.body
+    const { user } = req.decoded
+    if(!newFirstname){
+        newFirstname = user.firstname
+    }
+    if(!newLastname){
+        newLastname = user.lastname
+    }
+    if(!newEmail){
+        newEmail = user.email
+    }
+    const userCollection = db.collection('users')
+    await userCollection.findOneAndUpdate({_id: ObjectId(user._id)}, {$set:{
+            firstname:newFirstname, 
+            lastname: newLastname,
+            email: newEmail }}, (err, dbResponse) => {
+                if(err){
+                    console.log(err); 
+                    return res.status(500).send({error: 'Something went wrong, please try again'})
+                }
+                return res.status(200).send({response: dbResponse})
+            })
 })
 
 router.delete('/user', auth.checkToken, async (req, res) => {
@@ -139,7 +160,8 @@ router.delete('/user', auth.checkToken, async (req, res) => {
     await  userCollection.deleteOne({_id: ObjectId(user._id)}, (err, dbResponse) => {
         if(err){
             console.log(err); 
-            return res.status(500).send({error: 'Something went wrong, please try again'});}
+            return res.status(500).send({error: 'Something went wrong, please try again'})
+        }
         // console.log(user)
         return res.status(200).send({response: dbResponse})
     })
